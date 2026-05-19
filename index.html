@@ -1,0 +1,204 @@
+<!doctype html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>AR Business Card</title>
+
+  <!-- Script loading order is critical -- do not change it -->
+  <script async src="./external/xr/xr.js" data-preload-chunks="slam"></script>
+  <script src="./external/scripts/8frame-1.5.0.min.js"></script>
+  <script src="./external/xrextras/xrextras.js"></script>
+
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; }
+
+    #loading-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      transition: opacity 0.5s ease;
+    }
+    #loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #loading-overlay h1 {
+      font-size: 1.6rem;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.05em;
+    }
+    #loading-overlay p {
+      font-size: 0.9rem;
+      color: #aaa;
+      margin: 0;
+    }
+    .loading-dots span {
+      display: inline-block;
+      width: 8px; height: 8px;
+      margin: 0 3px;
+      background: #fff;
+      border-radius: 50%;
+      animation: bounce 1.2s infinite ease-in-out;
+    }
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40%            { transform: scale(1);   opacity: 1; }
+    }
+
+    #hint-overlay {
+      position: fixed;
+      bottom: 40px;
+      left: 0; right: 0;
+      text-align: center;
+      color: #fff;
+      font-family: sans-serif;
+      font-size: 0.85rem;
+      pointer-events: none;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+      z-index: 100;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay">
+    <h1>AR Business Card</h1>
+    <p>Point at the JPMC card to begin</p>
+    <br>
+    <div class="loading-dots"><span></span><span></span><span></span></div>
+    <br>
+    <p>Starting camera&hellip;</p>
+  </div>
+
+  <!-- Hint text shown after AR loads -->
+  <div id="hint-overlay">Double-tap to swap models &nbsp;|&nbsp; Pinch to scale &nbsp;|&nbsp; Two-finger drag to rotate</div>
+
+  <a-scene
+    xrconfig
+    xrweb="disableWorldTracking: true"
+    xrextras-gesture-detector
+    renderer="colorManagement: true; physicallyCorrectLights: true"
+    embedded
+    vr-mode-ui="enabled: false"
+  >
+    <a-assets>
+      <!-- WORKSHOP CHANGE: add your own model here following the same pattern -->
+      <a-asset-item id="robot-model"     src="./models/robot.glb"></a-asset-item>
+      <a-asset-item id="crystal-model"   src="./models/crystal.glb"></a-asset-item>
+      <a-asset-item id="satellite-model" src="./models/satellite.glb"></a-asset-item>
+      <a-asset-item id="trophy-model"    src="./models/trophy.glb"></a-asset-item>
+      <a-asset-item id="plant-model"     src="./models/plant.glb"></a-asset-item>
+    </a-assets>
+
+    <a-camera position="0 4 10" raycaster="objects: .cantap" cursor="fuse: false; rayOrigin: mouse;"></a-camera>
+
+    <a-light type="directional" intensity="0.8" position="1 2 1"></a-light>
+    <a-light type="ambient" intensity="0.6"></a-light>
+
+    <xrextras-named-image-target name="model-target">
+      <a-entity
+        id="model-wrapper"
+        xrextras-pinch-scale="min: 0.1; max: 5.0"
+        xrextras-two-finger-rotate
+      >
+        <!-- WORKSHOP CHANGE: swap gltf-model="#robot-model" to change what appears -->
+        <!-- Options: #robot-model · #crystal-model · #satellite-model · #trophy-model · #plant-model -->
+        <a-entity
+          id="active-model"
+          gltf-model="#robot-model"
+          scale="0.2 0.2 0.2"
+          position="0 0.1 0"
+          animation="property: rotation; to: 0 360 0; loop: true; dur: 6000; easing: linear"
+        ></a-entity>
+      </a-entity>
+    </xrextras-named-image-target>
+
+  </a-scene>
+
+  <script>
+    // Image target configuration -- from 8th Wall aframe-image-targets-example
+    // To use a custom image: run npx @8thwall/image-target-cli@latest, paste the JSON output here,
+    // and update name= in xrextras-named-image-target to match.
+    const targetData = {
+      "type": "PLANAR",
+      "properties": {
+        "top": 249,
+        "left": 155,
+        "width": 480,
+        "height": 640,
+        "isRotated": false,
+        "originalWidth": 1442,
+        "originalHeight": 1866
+      },
+      "imagePath": "image-targets/model-target_luminance.jpg",
+      "metadata": null,
+      "name": "model-target",
+      "resources": {
+        "originalImage": "model-target_original.jpg",
+        "croppedImage": "model-target_cropped.jpg",
+        "thumbnailImage": "model-target_thumbnail.jpg",
+        "luminanceImage": "model-target_luminance.jpg"
+      }
+    }
+
+    const onxrloaded = () => {
+      XR8.XrController.configure({
+        imageTargetData: [targetData],
+      })
+
+      // Hide loading overlay once XR is ready
+      const overlay = document.getElementById('loading-overlay')
+      overlay.classList.add('hidden')
+      setTimeout(() => {
+        overlay.style.display = 'none'
+        document.getElementById('hint-overlay').style.display = 'block'
+      }, 500)
+    }
+    window.XR8 ? onxrloaded() : window.addEventListener('xrloaded', onxrloaded)
+
+    // -----------------------------------------------------------------------
+    // Double-tap to cycle through all 5 models
+    // -----------------------------------------------------------------------
+    const models = [
+      { id: 'robot-model',     scale: '0.2 0.2 0.2',    position: '0 0.1 0' },
+      { id: 'crystal-model',   scale: '0.15 0.15 0.15', position: '0 0.1 0' },
+      { id: 'satellite-model', scale: '0.25 0.25 0.25', position: '0 0.1 0' },
+      { id: 'trophy-model',    scale: '0.2 0.2 0.2',    position: '0 0.1 0' },
+      { id: 'plant-model',     scale: '0.2 0.2 0.2',    position: '0 0.05 0' },
+    ]
+    let currentModelIndex = 0
+    let lastTap = 0
+
+    document.addEventListener('touchend', (e) => {
+      const now = Date.now()
+      if (now - lastTap < 300) {
+        // Double-tap detected
+        currentModelIndex = (currentModelIndex + 1) % models.length
+        const next = models[currentModelIndex]
+        const el = document.getElementById('active-model')
+        if (el) {
+          el.setAttribute('gltf-model', '#' + next.id)
+          el.setAttribute('scale', next.scale)
+          el.setAttribute('position', next.position)
+        }
+        e.preventDefault()
+      }
+      lastTap = now
+    }, { passive: false })
+  </script>
+
+</body>
+</html>
