@@ -34,7 +34,7 @@ To reference a different model ID defined in `<a-assets>`.
 | `external/scripts/8frame-1.5.0.min.js` | Patched A-Frame — never modify |
 | `external/xrextras/xrextras.js` | Image target + gesture components — never modify |
 | `models/*.glb` | 5 available 3D models |
-| `image-targets/` | Processed image target data |
+| `image-targets/` | QR code image target data (processed by 8th Wall CLI) |
 | `WORKSHOP_AGENT_CONFIG.md` | Agent behavior rules for this session |
 | `.nojekyll` | Prevents GitHub Pages Jekyll processing |
 
@@ -49,5 +49,5 @@ To reference a different model ID defined in `<a-assets>`.
 - Change spin speed: modify `dur: 6000` in animation attribute
 - Change model size: modify `scale` attribute (keep all three numbers equal)
 - Add text label: `<a-text value="..." position="0 0.5 0" align="center">` inside the image target
-- Change target name: update both `name=` in `xrextras-named-image-target` AND
-  `targetData.name` in the script block
+- Change target image: run `npx @8thwall/image-target-cli@latest` on the new image,
+  paste JSON output into `targetData` in index.html, and update `name=` in `xrextras-named-image-target`
