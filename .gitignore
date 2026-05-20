@@ -3,3 +3,5 @@ dist/
 *.zip
 .DS_Store
 Thumbs.db
+scripts/
+local-test-screenshot.png
