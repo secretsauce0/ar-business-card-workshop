@@ -119,8 +119,22 @@
     ]
     let currentModelIndex = 0
     let lastTap = 0
+    let wasMultiTouch = false
+
+    // Track multi-touch gestures (pinch / rotate) so we never mistake
+    // two fingers lifting as a double-tap.
+    document.addEventListener('touchstart', (e) => {
+      if (e.touches.length > 1) wasMultiTouch = true
+    }, { passive: true })
 
     document.addEventListener('touchend', (e) => {
+      // If a multi-touch gesture was in progress, ignore tap logic entirely
+      // until every finger has left the screen, then reset the flag.
+      if (wasMultiTouch) {
+        if (e.touches.length === 0) wasMultiTouch = false
+        return
+      }
+
       const now = Date.now()
       if (now - lastTap < 300) {
         currentModelIndex = (currentModelIndex + 1) % models.length
